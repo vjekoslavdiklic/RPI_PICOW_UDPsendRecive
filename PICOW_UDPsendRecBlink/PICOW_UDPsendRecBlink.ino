@@ -9,19 +9,26 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #ifndef STASSID
-#define STASSID "mywifi"
-#define STAPSK "mypass"
+#define STASSID "mywifiname"
+#define STAPSK "mywifipass"
 #endif
 
-#define LEDOUT 13
+#define LEDOUT 9 //use for remote controll
+#define WIFISTATUSLED 13 //on if connected
 
+bool LEDOUTSTATUS=0;
 unsigned int localPort = 5005;  // local port to listen on
    
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1];  // buffer to hold incoming packet,
-char ReplyBuffer[] = "acknowledged\r\n";        // a string to send back
+char ReplyBuffer[] = "AAAAAA\r\n";        // a string to send back
 
 WiFiUDP Udp;
+
+void LedToggler(int TargetPin,int togtime){
+    digitalWrite(TargetPin, !digitalRead(TargetPin));
+    delay(togtime); 
+}
 
 void setup() {
   Serial.begin(115200);
@@ -35,8 +42,8 @@ void setup() {
   Serial.printf("UDP server on port %d\n", localPort);
   Udp.begin(localPort);
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(LEDOUT, OUTPUT)
-  ;
+  pinMode(LEDOUT, OUTPUT);
+  pinMode(WIFISTATUSLED, OUTPUT);
 }
 
 void loop() {
@@ -51,17 +58,33 @@ void loop() {
     Serial.println("Contents:");
     Serial.println(packetBuffer);
 
+
+
+    //Process data recived
+    //if i got A for pc i'll toggle led
+
+    if (packetBuffer[0]=='A'){LEDOUTSTATUS=1;}
+    else{LEDOUTSTATUS=0;}
+
+    //define a replay:
+    ReplyBuffer[0]=48+LEDOUTSTATUS;
     // send a reply, to the IP address and port that sent us the packet we received
     Udp.beginPacket(Udp.remoteIP(),localPort);
     Udp.write(ReplyBuffer);
     Udp.endPacket();
 
-    //if i got A for pc i'll toggle led
-    if (packetBuffer[0]=='A'){digitalWrite(LEDOUT, HIGH);}
-    if (packetBuffer[0]=='B'){digitalWrite(LEDOUT, LOW);}
   }
-   //blink the LED
-  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));   // turn the LED on (HIGH is the voltage level)
-  delay(100);                       // wait for a second
+
+  
+//update wifi led status 
+  if(WiFi.status() == WL_CONNECTED){LedToggler(WIFISTATUSLED,50);}
+  else{digitalWrite(WIFISTATUSLED, LOW);}
+
+//blink the status LED
+  LedToggler(LED_BUILTIN,100);
     
+// update LEDOUT status
+    digitalWrite(LEDOUT, LEDOUTSTATUS);
+    
+
 }

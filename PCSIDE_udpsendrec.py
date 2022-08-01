@@ -6,7 +6,7 @@ Target_UDP_IP = "192.168.5.22"
 Local_UDP_IP = socket.gethostbyname(socket.gethostname()) #Obtain automaticaly
 UDP_PORT = 5005
 BufferSize=1024
-MESSAGE = b"A\n" #or b"B\n" for OFF
+MESSAGE = b"B\n" #or b"B\n" for OFF
 TimeOutInSec=0.5
 
 #initialize
