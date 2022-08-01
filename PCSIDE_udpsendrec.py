@@ -1,7 +1,7 @@
 import socket
 import time
 
-#configuration
+#configuration settings
 Target_UDP_IP = "192.168.5.22"
 Local_UDP_IP = socket.gethostbyname(socket.gethostname()) #Obtain automaticaly
 UDP_PORT = 5005
