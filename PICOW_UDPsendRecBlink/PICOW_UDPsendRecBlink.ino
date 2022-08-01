@@ -10,11 +10,13 @@
 #include <WiFiUdp.h>
 #ifndef STASSID
 #define STASSID "mywifi"
-#define STAPSK ",ypass"
+#define STAPSK "mypass"
 #endif
 
-unsigned int localPort = 5005;  // local port to listen on
+#define LEDOUT 13
 
+unsigned int localPort = 5005;  // local port to listen on
+   
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1];  // buffer to hold incoming packet,
 char ReplyBuffer[] = "acknowledged\r\n";        // a string to send back
@@ -33,6 +35,8 @@ void setup() {
   Serial.printf("UDP server on port %d\n", localPort);
   Udp.begin(localPort);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LEDOUT, OUTPUT)
+  ;
 }
 
 void loop() {
@@ -51,12 +55,13 @@ void loop() {
     Udp.beginPacket(Udp.remoteIP(),localPort);
     Udp.write(ReplyBuffer);
     Udp.endPacket();
+
+    //if i got A for pc i'll toggle led
+    if (packetBuffer[0]=='A'){digitalWrite(LEDOUT, HIGH);}
+    if (packetBuffer[0]=='B'){digitalWrite(LEDOUT, LOW);}
   }
    //blink the LED
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));   // turn the LED on (HIGH is the voltage level)
-  delay(1000);                       // wait for a second
+  delay(100);                       // wait for a second
     
 }
-
-
-*/

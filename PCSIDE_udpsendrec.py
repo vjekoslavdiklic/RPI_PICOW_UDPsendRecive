@@ -6,13 +6,13 @@ Target_UDP_IP = "192.168.5.22"
 Local_UDP_IP = socket.gethostbyname(socket.gethostname()) #Obtain automaticaly
 UDP_PORT = 5005
 BufferSize=1024
-MESSAGE = b"ThisIsTest"
-TimeOutInSec=1
+MESSAGE = b"A\n" #or b"B\n" for OFF
+TimeOutInSec=0.5
 
 #initialize
 SockOut = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) # UDP socket for sending data
 SockIn = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) # UDP socket for receiving data
-SockIn.bind((Local_UDP_IP , UDP_PORT5)) #bing to local ip and socket
+SockIn.bind((Local_UDP_IP , UDP_PORT)) #bing to local ip and socket
 
 # do in inf. loop send receive
 while True:
