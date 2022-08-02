@@ -1,37 +1,56 @@
 /*
  * This is a small example modified from examples for PicoW. 
- * Program revieves and confirms recived udp by send massage back. 
+ * Program revieves and confirms recived UDP by send massage back. 
+ * UDP Massage contains analog value form A2 pin and Onboard temp sensor value.
  * Great start for many projects that includes receiving and sending to pc from PicoW.
  * Comes with example python code for PC side
  * Both PC and PICOW have to be connected on same Wifi 
  * 
 */
+#include <stdio.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #ifndef STASSID
-#define STASSID "mywifiname"
-#define STAPSK "mywifipass"
+#define STASSID "WifiName" //Wifi Network Name
+#define STAPSK "WifiPass" //Wifi Network Password
 #endif
 
-#define LEDOUT 9 //use for remote controll
-#define WIFISTATUSLED 13 //on if connected
-
-bool LEDOUTSTATUS=0;
-unsigned int localPort = 5005;  // local port to listen on
+#define LEDOUT 9 //Use For Output Pin
+#define WIFISTATUSLED 13 //On If Connected On Wifi Network
+#define AnalogPin A2 //Pin ID For Analog
+bool LEDOUTSTATUS=0; //OUTPUT Status Variable
+unsigned int localPort = 5005;  // Local Port To Listen On
+int AnalogValue=0; //Variable For Storing Analog Readout
+float Tempvalue=0; //Varibale For Storing Temp Readout
    
-// buffers for receiving and sending data
+// Buffers For Receiving And Sending Data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1];  // buffer to hold incoming packet,
-char ReplyBuffer[] = "AAAAAA\r\n";        // a string to send back
+char ReplyBuffer[] = "E_T=TempC_A=Aval\r\n";        // a string to send back
 
-WiFiUDP Udp;
+WiFiUDP Udp; //Activete Udp
 
-void LedToggler(int TargetPin,int togtime){
-    digitalWrite(TargetPin, !digitalRead(TargetPin));
-    delay(togtime); 
+//Simple LED Toggler Function
+void LedToggler(int TargetPin,int togtime)
+{
+  digitalWrite(TargetPin, !digitalRead(TargetPin));
+  delay(togtime); 
 }
 
-void setup() {
-  Serial.begin(115200);
+//This Function Forms UDP Data For Sending
+void UpdateReplayBuffer(char *rBuffer,float temp,int anaval,bool ledstat)
+{
+  rBuffer[0]=48+ledstat; //write ledstatus on first char
+  sprintf( &ReplyBuffer[12], "%d", anaval); //write analog value
+  sprintf( &ReplyBuffer[4], "%2.1fC", temp); //write temp value
+  rBuffer[9]='_';//fix /remove \n written by sprintf at position 9
+  rBuffer[10]='A';
+  rBuffer[11]='=';
+  }
+
+void setup() 
+{
+  Serial.begin(115200); //start serial communication
+  //Try To Connect to Wifi
   WiFi.begin(STASSID, STAPSK);
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print('.');
@@ -44,47 +63,47 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(LEDOUT, OUTPUT);
   pinMode(WIFISTATUSLED, OUTPUT);
+  pinMode(AnalogPin,INPUT);
 }
 
-void loop() {
+void loop() 
+{
   // if there's data available, read a packet
   int packetSize = Udp.parsePacket();
-  if (packetSize) {
+  if (packetSize) 
+  {
     Serial.printf("Received packet of size %d from %s:%d\n    (to %s:%d)\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort(), Udp.destinationIP().toString().c_str(), Udp.localPort());
 
-    // read the packet into packetBufffer
+    // Read The Packet Into PacketBufffer
     int n = Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
     packetBuffer[n] = 0;
     Serial.println("Contents:");
     Serial.println(packetBuffer);
 
+    //Process Data Recived   
+    if (packetBuffer[0]=='A'){LEDOUTSTATUS=1;} //if i got A from pc LEDOUTSTATUS=1
+    else{LEDOUTSTATUS=0;} //otherwise LEDOUTSTATUS=0
+    
+    //Update UDP Buffer
+    UpdateReplayBuffer(&ReplyBuffer[0], Tempvalue, AnalogValue,LEDOUTSTATUS);
 
-
-    //Process data recived
-    //if i got A for pc i'll toggle led
-
-    if (packetBuffer[0]=='A'){LEDOUTSTATUS=1;}
-    else{LEDOUTSTATUS=0;}
-
-    //define a replay:
-    ReplyBuffer[0]=48+LEDOUTSTATUS;
-    // send a reply, to the IP address and port that sent us the packet we received
+    // Send a Reply, to the IP address and port that sent us the packet we received
     Udp.beginPacket(Udp.remoteIP(),localPort);
     Udp.write(ReplyBuffer);
     Udp.endPacket();
-
   }
-
   
-//update wifi led status 
+  //Update Wifi Led Status 
   if(WiFi.status() == WL_CONNECTED){LedToggler(WIFISTATUSLED,50);}
   else{digitalWrite(WIFISTATUSLED, LOW);}
 
-//blink the status LED
+  //Blink the status LED
   LedToggler(LED_BUILTIN,100);
-    
-// update LEDOUT status
-    digitalWrite(LEDOUT, LEDOUTSTATUS);
-    
 
+  //Read All Analog Inputs:
+  AnalogValue=analogRead(AnalogPin);// read analog input value
+  Tempvalue=analogReadTemp(); // read onborad temp analog value
+    
+  // Update LEDOUT Output Status
+  digitalWrite(LEDOUT, LEDOUTSTATUS);// SET output pin
 }
