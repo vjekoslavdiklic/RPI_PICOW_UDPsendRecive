@@ -7,6 +7,7 @@
  * Both PC and PICOW have to be connected on same Wifi 
  * 
 */
+//Wifistable
 #include <stdio.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
