@@ -12,8 +12,6 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #ifndef STASSID
-#define STASSID "mywifi" //Wifi Network Name
-#define STAPSK "mypass" //Wifi Network Password
 #endif
 #define SYSID "ID001" //Must have this number of chars (5) IDXXX
 #define LEDOUT 9 //Use For Output Pin
@@ -24,13 +22,13 @@ bool LEDOUTSTATUS=0; //OUTPUT Status Variable
 unsigned int localPort = 5005;  // Local Port To Listen On
 int AnalogValue=0; //Variable For Storing Analog Readout
 float Tempvalue=0; //Varibale For Storing Temp Readout
-int LT=1234; //Low triger OFF fun
-int HT=4321; //High Trigger On fun
-int Mode=0;//0 for auto,1 for wifi control,3 hibrid, 4 for error   
+int LT=100; //Low triger OFF fun
+int HT=900; //High Trigger On fun
+int Mode=4;//0 for auto,1 for remote control,3 hibrid, 4 for error   
 // Buffers For Receiving And Sending Data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1];  // buffer to hold incoming packet,
 char ReplyBuffer[] = "E_T=XX.XC_A=XXXX_IDXXX_LT=XXXX_HT=XXXX_M=\r\n";        // a string to send back
-
+int lastpack;
 WiFiUDP Udp; //Activete Udp
 
 //Simple LED Toggler Function
@@ -80,6 +78,7 @@ void setup()
   pinMode(LEDOUT, OUTPUT);
   pinMode(WIFISTATUSLED, OUTPUT);
   pinMode(AnalogPin,INPUT);
+  Mode=0;
 }
 
 void loop() 
@@ -88,7 +87,7 @@ void loop()
     {
     // if there's data available, read a packet
     int packetSize = Udp.parsePacket();
-    if (packetSize) 
+    if (packetSize)
       {
         Serial.printf("Received packet of size %d from %s:%d\n    (to %s:%d)\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort(), Udp.destinationIP().toString().c_str(), Udp.localPort());
 
@@ -100,7 +99,10 @@ void loop()
 
         //Process Data Recived   
         if (packetBuffer[0]=='A'){LEDOUTSTATUS=1;} //if i got A from pc LEDOUTSTATUS=1
-        else{LEDOUTSTATUS=0;} //otherwise LEDOUTSTATUS=0
+        if (Mode==1)
+        {//LEDOUTSTATUS=packetBuffer[1];
+          }
+        //else{} //otherwise LEDOUTSTATUS=0
     
         //Update UDP Buffer
         UpdateReplayBuffer(&ReplyBuffer[0], Tempvalue, AnalogValue,LEDOUTSTATUS);
@@ -123,7 +125,13 @@ void loop()
     //Read All Analog Inputs:
     AnalogValue=analogRead(AnalogPin);// read analog input value
     Tempvalue=analogReadTemp(); // read onborad temp analog value
-    
+
+    //Do the Logic if in auto Mode
+    if (Mode==0)
+      {
+      if ((AnalogValue<LT)&(LEDOUTSTATUS)){LEDOUTSTATUS=0;}
+      if ((AnalogValue>HT)&(!LEDOUTSTATUS)){LEDOUTSTATUS=1;}
+      }
     // Update LEDOUT Output Status
     digitalWrite(LEDOUT, LEDOUTSTATUS);// SET output pin
  }
