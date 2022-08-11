@@ -79,6 +79,7 @@ void setup()
   pinMode(WIFISTATUSLED, OUTPUT);
   pinMode(AnalogPin,INPUT);
   Mode=0;
+  void UpdateReplayBuffer(char *rBuffer,float temp,int anaval,bool ledstat);
 }
 
 void loop() 
@@ -97,11 +98,18 @@ void loop()
         Serial.println("Contents:");
         Serial.println(packetBuffer);
 
-        //Process Data Recived   
-        if (packetBuffer[0]=='A'){LEDOUTSTATUS=1;} //if i got A from pc LEDOUTSTATUS=1
+        //Process Data Recived
+        Mode=(packetBuffer[2]-48);
         if (Mode==1)
-        {//LEDOUTSTATUS=packetBuffer[1];
-          }
+        {
+          LEDOUTSTATUS=(packetBuffer[0]-48); 
+        }
+        //if (packetBuffer[4]==1){
+        //  }
+        //if (packetBuffer[0]=='A'){LEDOUTSTATUS=1;} //if i got A from pc LEDOUTSTATUS=1
+        //if (Mode==1)
+        //{//LEDOUTSTATUS=packetBuffer[1];
+         //}
         //else{} //otherwise LEDOUTSTATUS=0
     
         //Update UDP Buffer
